@@ -1,51 +1,61 @@
 pipeline {
     agent {
         node {
-            label 'roboshop'
-        }
+            label 'roboshop' 
+        } 
     }
     environment {
         appVersion = ""
+        ACC_ID = "160885265516"
         region = "us-east-1"
-        ACC_ID = "665096241917" 
+    }
+    options {
+        //disableConcurrentBuilds()
+        timeout(time: 5, unit: 'MINUTES')
     }
     stages {
-        stage ('Read Version') {
+        stage('Read version'){
             steps {
                 script {
-                    // Read and parse the package.json file
+                    // Load and parse the JSON file
                     def packageJson = readJSON file: 'package.json'
                     
-                    // Access specific fields
-                    env.appVersion = packageJson.version
+                    // Access fields directly
+                    appVersion = packageJson.version
                     echo "Building version ${appVersion}"
                 }
             }
-
         }
-        stage ('Install dependencies') {
+        stage('Install Dependencies') {
             steps {
-                script {
+                script{
                     sh """
                         npm install
                     """
                 }
             }
-        }    
-        stage ('Build Image') {
+        }
+        stage('Build Image') {
             steps {
                script{
                     withAWS(credentials: 'aws-creds', region: "${region}") {
                         // Commands here have AWS authentication
                         sh """
-                            # Login to ECR
-                            aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.${region}.amazonaws.com
-
-                            # Build Docker image
-                            docker build -t ${ACC_ID}.dkr.ecr.${region}.amazonaws.com/roboshop/catalogue:${env.appVersion} .
-
-                            # Push image
-                            docker push ${ACC_ID}.dkr.ecr.${region}.amazonaws.com/roboshop/catalogue:${env.appVersion}
+                            
+                            docker build -t ${ACC_ID}.dkr.ecr.${region}.amazonaws.com/roboshop/catalogue:${appVersion} .
+                        """
+                    }
+                }
+            }
+        }
+        stage ('Push image to ECR'){
+            steps {
+               script{
+                    withAWS(credentials: 'aws-creds', region: "${region}") {
+                        // Commands here have AWS authentication
+                        sh """
+                            aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com
+                            docker push ${ACC_ID}.dkr.ecr.${region}.amazonaws.com/roboshop/catalogue:${appVersion}
                         """
                     }
                 }
@@ -64,4 +74,4 @@ pipeline {
             echo "pipeline failure"
         }
     }
-} 
+}
