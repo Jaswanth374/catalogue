@@ -6,7 +6,7 @@ pipeline {
     }
     environment {
         appVersion = ""
-        ACC_ID = "160885265516"
+        ACC_ID = "665096241917"
         region = "us-east-1"
     }
     options {
