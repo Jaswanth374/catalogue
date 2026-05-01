@@ -17,7 +17,7 @@ pipeline {
                     def packageJson = readJSON file: 'package.json'
                     
                     // Access specific fields
-                    def appVersion = packageJson.version
+                    appVersion = packageJson.version
                     echo "Building version ${appVersion}"
                 }
             }
